@@ -14,7 +14,7 @@ import {
 } from './schema';
 
 export abstract class WatchAndMemorizeService {
-  private static templateSlug = 'watchMemorize';
+  private static templateSlug = 'watch-and-memorize';
 
   // CREATE: Buat game baru
   static async createGame(userId: string, data: ICreateWatchAndMemorizeInput) {
@@ -311,3 +311,4 @@ export abstract class WatchAndMemorizeService {
     return count + 1;
   }
 }
+
