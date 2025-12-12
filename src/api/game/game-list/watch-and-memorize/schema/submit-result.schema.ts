@@ -8,4 +8,4 @@ export const SubmitResultSchema = z.object({
   coinsEarned: z.number().int().min(0),
 });
 
-export type SubmitResultInput = z.infer<typeof SubmitResultSchema>;
+export type ISubmitResultInput = z.infer<typeof SubmitResultSchema>;

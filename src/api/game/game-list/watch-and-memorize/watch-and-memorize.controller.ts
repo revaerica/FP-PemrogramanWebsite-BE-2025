@@ -1,17 +1,22 @@
 import { type NextFunction, type Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
-import { type AuthedRequest, SuccessResponse, validateAuth, validateBody } from '@/common';
+import {
+  type AuthedRequest,
+  SuccessResponse,
+  validateAuth,
+  validateBody,
+} from '@/common';
 
-import { WatchAndMemorizeService } from './watch-and-memorize.service';
 import {
   CreateWatchAndMemorizeSchema,
-  type CreateWatchAndMemorizeInput,
-  UpdateWatchAndMemorizeSchema,
-  type UpdateWatchAndMemorizeInput,
+  type ICreateWatchAndMemorizeInput,
+  type ISubmitResultInput,
+  type IUpdateWatchAndMemorizeInput,
   SubmitResultSchema,
-  type SubmitResultInput,
+  UpdateWatchAndMemorizeSchema,
 } from './schema';
+import { WatchAndMemorizeService } from './watch-and-memorize.service';
 
 export const WatchAndMemorizeController = Router()
   // POST /api/game/watch-and-memorize - Create game (need auth)
@@ -20,14 +25,21 @@ export const WatchAndMemorizeController = Router()
     validateAuth({}),
     validateBody({ schema: CreateWatchAndMemorizeSchema }),
     async (
-      request: AuthedRequest<{}, {}, CreateWatchAndMemorizeInput>,
+      request: AuthedRequest<{}, {}, ICreateWatchAndMemorizeInput>,
       response: Response,
       next: NextFunction,
     ) => {
       try {
-        const game = await WatchAndMemorizeService.createGame(request.user!.user_id, request.body);
+        const game = await WatchAndMemorizeService.createGame(
+          request.user!.user_id,
+          request.body,
+        );
 
-        const result = new SuccessResponse(StatusCodes.CREATED, 'Game created successfully', game);
+        const result = new SuccessResponse(
+          StatusCodes.CREATED,
+          'Game created successfully',
+          game,
+        );
 
         return response.status(result.statusCode).json(result.json());
       } catch (error) {
@@ -40,7 +52,11 @@ export const WatchAndMemorizeController = Router()
   .get(
     '/:gameId',
     validateAuth({}),
-    async (request: AuthedRequest<{ gameId: string }>, response: Response, next: NextFunction) => {
+    async (
+      request: AuthedRequest<{ gameId: string }>,
+      response: Response,
+      next: NextFunction,
+    ) => {
       try {
         const game = await WatchAndMemorizeService.getGameDetail(
           request.params.gameId,
@@ -48,7 +64,11 @@ export const WatchAndMemorizeController = Router()
           request.user!.role,
         );
 
-        const result = new SuccessResponse(StatusCodes.OK, 'Game retrieved successfully', game);
+        const result = new SuccessResponse(
+          StatusCodes.OK,
+          'Game retrieved successfully',
+          game,
+        );
 
         return response.status(result.statusCode).json(result.json());
       } catch (error) {
@@ -58,18 +78,25 @@ export const WatchAndMemorizeController = Router()
   )
 
   // GET /api/game/watch-and-memorize/:gameId/play - Get game for play (public)
-  .get('/:gameId/play', async (request, response: Response, next: NextFunction) => {
-    try {
-      const { gameId } = request.params;
-      const game = await WatchAndMemorizeService.getGameForPlay(gameId);
+  .get(
+    '/:gameId/play',
+    async (request, response: Response, next: NextFunction) => {
+      try {
+        const { gameId } = request.params;
+        const game = await WatchAndMemorizeService.getGameForPlay(gameId);
 
-      const result = new SuccessResponse(StatusCodes.OK, 'Game loaded successfully', game);
+        const result = new SuccessResponse(
+          StatusCodes.OK,
+          'Game loaded successfully',
+          game,
+        );
 
-      return response.status(result.statusCode).json(result.json());
-    } catch (error) {
-      return next(error);
-    }
-  })
+        return response.status(result.statusCode).json(result.json());
+      } catch (error) {
+        return next(error);
+      }
+    },
+  )
 
   // PUT /api/game/watch-and-memorize/:gameId - Update game (need auth)
   .put(
@@ -77,7 +104,11 @@ export const WatchAndMemorizeController = Router()
     validateAuth({}),
     validateBody({ schema: UpdateWatchAndMemorizeSchema }),
     async (
-      request: AuthedRequest<{ gameId: string }, {}, UpdateWatchAndMemorizeInput>,
+      request: AuthedRequest<
+        { gameId: string },
+        {},
+        IUpdateWatchAndMemorizeInput
+      >,
       response: Response,
       next: NextFunction,
     ) => {
@@ -89,7 +120,11 @@ export const WatchAndMemorizeController = Router()
           request.body,
         );
 
-        const result = new SuccessResponse(StatusCodes.OK, 'Game updated successfully', game);
+        const result = new SuccessResponse(
+          StatusCodes.OK,
+          'Game updated successfully',
+          game,
+        );
 
         return response.status(result.statusCode).json(result.json());
       } catch (error) {
@@ -102,7 +137,11 @@ export const WatchAndMemorizeController = Router()
   .delete(
     '/:gameId',
     validateAuth({}),
-    async (request: AuthedRequest<{ gameId: string }>, response: Response, next: NextFunction) => {
+    async (
+      request: AuthedRequest<{ gameId: string }>,
+      response: Response,
+      next: NextFunction,
+    ) => {
       try {
         const result = await WatchAndMemorizeService.deleteGame(
           request.params.gameId,
@@ -116,7 +155,9 @@ export const WatchAndMemorizeController = Router()
           result,
         );
 
-        return response.status(successResponse.statusCode).json(successResponse.json());
+        return response
+          .status(successResponse.statusCode)
+          .json(successResponse.json());
       } catch (error) {
         return next(error);
       }
@@ -128,7 +169,7 @@ export const WatchAndMemorizeController = Router()
     '/:gameId/submit',
     validateBody({ schema: SubmitResultSchema }),
     async (
-      request: AuthedRequest<{ gameId: string }, {}, SubmitResultInput>,
+      request: AuthedRequest<{ gameId: string }, {}, ISubmitResultInput>,
       response: Response,
       next: NextFunction,
     ) => {
@@ -146,7 +187,9 @@ export const WatchAndMemorizeController = Router()
           result,
         );
 
-        return response.status(successResponse.statusCode).json(successResponse.json());
+        return response
+          .status(successResponse.statusCode)
+          .json(successResponse.json());
       } catch (error) {
         return next(error);
       }
@@ -154,21 +197,27 @@ export const WatchAndMemorizeController = Router()
   )
 
   // GET /api/game/watch-and-memorize/:gameId/leaderboard - Get leaderboard (public)
-  .get('/:gameId/leaderboard', async (request, response: Response, next: NextFunction) => {
-    try {
-      const { gameId } = request.params;
-      const limit = parseInt(request.query.limit as string) || 10;
+  .get(
+    '/:gameId/leaderboard',
+    async (request, response: Response, next: NextFunction) => {
+      try {
+        const { gameId } = request.params;
+        const limit = Number.parseInt(request.query.limit as string) || 10;
 
-      const leaderboard = await WatchAndMemorizeService.getLeaderboard(gameId, limit);
+        const leaderboard = await WatchAndMemorizeService.getLeaderboard(
+          gameId,
+          limit,
+        );
 
-      const result = new SuccessResponse(
-        StatusCodes.OK,
-        'Leaderboard retrieved successfully',
-        leaderboard,
-      );
+        const result = new SuccessResponse(
+          StatusCodes.OK,
+          'Leaderboard retrieved successfully',
+          leaderboard,
+        );
 
-      return response.status(result.statusCode).json(result.json());
-    } catch (error) {
-      return next(error);
-    }
-  });
+        return response.status(result.statusCode).json(result.json());
+      } catch (error) {
+        return next(error);
+      }
+    },
+  );

@@ -3,7 +3,7 @@ import { z } from 'zod';
 const GameJsonSchema = z.object({
   difficulty: z.enum(['easy', 'normal', 'hard']),
   animalsToWatch: z.number().int().min(3).max(5),
-  memorizationTime: z.number().int().min(5000).max(15000),
+  memorizationTime: z.number().int().min(5000).max(15_000),
   guessTimeLimit: z.number().int().min(20).max(40),
   totalRounds: z.number().int().min(3).max(5),
   animalSequence: z.array(z.string()).min(3).max(20),
@@ -17,4 +17,6 @@ export const UpdateWatchAndMemorizeSchema = z.object({
   is_published: z.boolean().optional(),
 });
 
-export type UpdateWatchAndMemorizeInput = z.infer<typeof UpdateWatchAndMemorizeSchema>;
+export type IUpdateWatchAndMemorizeInput = z.infer<
+  typeof UpdateWatchAndMemorizeSchema
+>;

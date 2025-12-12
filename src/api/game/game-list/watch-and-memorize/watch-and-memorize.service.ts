@@ -2,24 +2,24 @@ import { type Prisma, type ROLE } from '@prisma/client';
 import { StatusCodes } from 'http-status-codes';
 
 import { ErrorResponse, prisma } from '@/common';
-import type {
-  IWatchAndMemorizeGameJson,
-  IWatchAndMemorizePlayResponse,
+import {
+  type IWatchAndMemorizeGameJson,
+  type IWatchAndMemorizePlayResponse,
 } from '@/common/interface/games';
 
-import type {
-  CreateWatchAndMemorizeInput,
-  UpdateWatchAndMemorizeInput,
-  SubmitResultInput,          
+import {
+  type ICreateWatchAndMemorizeInput,
+  type ISubmitResultInput,
+  type IUpdateWatchAndMemorizeInput,
 } from './schema';
 
 export abstract class WatchAndMemorizeService {
-  private static TEMPLATE_SLUG = 'watch-and-memorize';
+  private static templateSlug = 'watchMemorize';
 
   // CREATE: Buat game baru
-  static async createGame(userId: string, data: CreateWatchAndMemorizeInput) {
+  static async createGame(userId: string, data: ICreateWatchAndMemorizeInput) {
     const template = await prisma.gameTemplates.findUnique({
-      where: { slug: this.TEMPLATE_SLUG },
+      where: { slug: this.templateSlug },
       select: { id: true },
     });
 
@@ -33,7 +33,10 @@ export abstract class WatchAndMemorizeService {
     });
 
     if (existingGame) {
-      throw new ErrorResponse(StatusCodes.BAD_REQUEST, 'Game name already exists');
+      throw new ErrorResponse(
+        StatusCodes.BAD_REQUEST,
+        'Game name already exists',
+      );
     }
 
     const game = await prisma.games.create({
@@ -73,12 +76,15 @@ export abstract class WatchAndMemorizeService {
       },
     });
 
-    if (!game || game.game_template.slug !== this.TEMPLATE_SLUG) {
+    if (!game || game.game_template.slug !== this.templateSlug) {
       throw new ErrorResponse(StatusCodes.NOT_FOUND, 'Game not found');
     }
 
     if (userRole !== 'SUPER_ADMIN' && game.creator_id !== userId) {
-      throw new ErrorResponse(StatusCodes.FORBIDDEN, 'Unauthorized to access this game');
+      throw new ErrorResponse(
+        StatusCodes.FORBIDDEN,
+        'Unauthorized to access this game',
+      );
     }
 
     return {
@@ -88,7 +94,9 @@ export abstract class WatchAndMemorizeService {
   }
 
   // GET: Data game untuk play (public, published only)
-  static async getGameForPlay(gameId: string): Promise<IWatchAndMemorizePlayResponse> {
+  static async getGameForPlay(
+    gameId: string,
+  ): Promise<IWatchAndMemorizePlayResponse> {
     const game = await prisma.games.findUnique({
       where: {
         id: gameId,
@@ -101,8 +109,11 @@ export abstract class WatchAndMemorizeService {
       },
     });
 
-    if (!game || game.game_template.slug !== this.TEMPLATE_SLUG) {
-      throw new ErrorResponse(StatusCodes.NOT_FOUND, 'Game not found or not published');
+    if (!game || game.game_template.slug !== this.templateSlug) {
+      throw new ErrorResponse(
+        StatusCodes.NOT_FOUND,
+        'Game not found or not published',
+      );
     }
 
     await prisma.games.update({
@@ -130,7 +141,7 @@ export abstract class WatchAndMemorizeService {
     gameId: string,
     userId: string,
     userRole: ROLE,
-    data: UpdateWatchAndMemorizeInput,
+    data: IUpdateWatchAndMemorizeInput,
   ) {
     await this.getGameDetail(gameId, userId, userRole);
 
@@ -144,7 +155,10 @@ export abstract class WatchAndMemorizeService {
       });
 
       if (existing) {
-        throw new ErrorResponse(StatusCodes.BAD_REQUEST, 'Game name already exists');
+        throw new ErrorResponse(
+          StatusCodes.BAD_REQUEST,
+          'Game name already exists',
+        );
       }
     }
 
@@ -154,7 +168,9 @@ export abstract class WatchAndMemorizeService {
         name: data.name,
         description: data.description,
         thumbnail_image: data.thumbnail_image,
-        game_json: data.game_json ? (data.game_json as unknown as Prisma.InputJsonValue) : undefined,
+        game_json: data.game_json
+          ? (data.game_json as unknown as Prisma.InputJsonValue)
+          : undefined,
         is_published: data.is_published,
       },
       select: {
@@ -177,7 +193,11 @@ export abstract class WatchAndMemorizeService {
   }
 
   // SUBMIT: Submit hasil gameplay & save to leaderboard
-  static async submitResult(gameId: string, userId: string | undefined, data: SubmitResultInput) {
+  static async submitResult(
+    gameId: string,
+    userId: string | undefined,
+    data: ISubmitResultInput,
+  ) {
     const game = await prisma.games.findUnique({
       where: { id: gameId },
       include: {
@@ -187,7 +207,7 @@ export abstract class WatchAndMemorizeService {
       },
     });
 
-    if (!game || game.game_template.slug !== this.TEMPLATE_SLUG) {
+    if (!game || game.game_template.slug !== this.templateSlug) {
       throw new ErrorResponse(StatusCodes.NOT_FOUND, 'Game not found');
     }
 
@@ -229,7 +249,10 @@ export abstract class WatchAndMemorizeService {
       timeSpent: data.timeSpent,
       coinsEarned: data.coinsEarned,
       rank,
-      message: data.correctAnswers === data.totalQuestions ? 'Perfect score!' : 'Great effort!',
+      message:
+        data.correctAnswers === data.totalQuestions
+          ? 'Perfect score!'
+          : 'Great effort!',
     };
   }
 
@@ -244,7 +267,7 @@ export abstract class WatchAndMemorizeService {
       },
     });
 
-    if (!game || game.game_template.slug !== this.TEMPLATE_SLUG) {
+    if (!game || game.game_template.slug !== this.templateSlug) {
       throw new ErrorResponse(StatusCodes.NOT_FOUND, 'Game not found');
     }
 
@@ -274,7 +297,10 @@ export abstract class WatchAndMemorizeService {
   }
 
   // Helper: Get player rank
-  private static async getPlayerRank(gameId: string, score: number): Promise<number> {
+  private static async getPlayerRank(
+    gameId: string,
+    score: number,
+  ): Promise<number> {
     const count = await prisma.leaderboard.count({
       where: {
         game_id: gameId,
