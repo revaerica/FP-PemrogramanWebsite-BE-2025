@@ -4,11 +4,11 @@ services:
     container_name: fp-database
     restart: unless-stopped
     ports:
-      - 5432:5432
+      - ${POSTGRES_PORT}:5432
     environment:
-      POSTGRES_DB: watchmemorize
-      POSTGRES_USER: fp_user
-      POSTGRES_PASSWORD: b5sukses
+      POSTGRES_DB: ${POSTGRES_NAME}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - ./docker/volumes/:/var/lib/postgresql/data
     healthcheck:
@@ -24,4 +24,4 @@ networks:
     driver: bridge
 
 volumes:
-  mysqldata:
+  mysqldata::
