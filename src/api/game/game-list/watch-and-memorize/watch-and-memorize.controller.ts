@@ -7,19 +7,21 @@ import {
   validateAuth,
   validateBody,
 } from '@/common';
+import { AdditionalValidation } from '@/utils/additional-validation.util';
 
 import {
   CreateWatchAndMemorizeSchema,
   type ICreateWatchAndMemorizeInput,
   type ISubmitResultInput,
   type IUpdateWatchAndMemorizeInput,
+  LeaderboardQuerySchema,
   SubmitResultSchema,
   UpdateWatchAndMemorizeSchema,
 } from './schema';
 import { WatchAndMemorizeService } from './watch-and-memorize.service';
 
 export const WatchAndMemorizeController = Router()
-  // POST /api/game/watch-and-memorize - Create game (need auth)
+  // POST /api/game/game-type/watch-and-memorize - Create game (need auth)
   .post(
     '/',
     validateAuth({}),
@@ -48,7 +50,7 @@ export const WatchAndMemorizeController = Router()
     },
   )
 
-  // GET /api/game/watch-and-memorize/:gameId - Get game detail for edit (need auth)
+  // GET /api/game/game-type/watch-and-memorize/:gameId - Get game detail for edit (need auth)
   .get(
     '/:gameId',
     validateAuth({}),
@@ -77,7 +79,7 @@ export const WatchAndMemorizeController = Router()
     },
   )
 
-  // GET /api/game/watch-and-memorize/:gameId/play - Get game for play (public)
+  // GET /api/game/game-type/watch-and-memorize/:gameId/play - Get game for play (public)
   .get(
     '/:gameId/play',
     async (request, response: Response, next: NextFunction) => {
@@ -98,7 +100,7 @@ export const WatchAndMemorizeController = Router()
     },
   )
 
-  // PUT /api/game/watch-and-memorize/:gameId - Update game (need auth)
+  // PUT /api/game/game-type/watch-and-memorize/:gameId - Update game (need auth)
   .put(
     '/:gameId',
     validateAuth({}),
@@ -133,7 +135,7 @@ export const WatchAndMemorizeController = Router()
     },
   )
 
-  // DELETE /api/game/watch-and-memorize/:gameId - Delete game (need auth)
+  // DELETE /api/game/game-type/watch-and-memorize/:gameId - Delete game (need auth)
   .delete(
     '/:gameId',
     validateAuth({}),
@@ -164,7 +166,7 @@ export const WatchAndMemorizeController = Router()
     },
   )
 
-  // POST /api/game/watch-and-memorize/:gameId/submit - Submit result (optional auth)
+  // POST /api/game/game-type/watch-and-memorize/:gameId/submit - Submit result (optional auth)
   .post(
     '/:gameId/submit',
     validateBody({ schema: SubmitResultSchema }),
@@ -196,17 +198,22 @@ export const WatchAndMemorizeController = Router()
     },
   )
 
-  // GET /api/game/watch-and-memorize/:gameId/leaderboard - Get leaderboard (public)
+  // GET /api/game/game-type/watch-and-memorize/:gameId/leaderboard - Get leaderboard (public)
   .get(
     '/:gameId/leaderboard',
     async (request, response: Response, next: NextFunction) => {
       try {
         const { gameId } = request.params;
-        const limit = Number.parseInt(request.query.limit as string) || 10;
+
+        // ✅ Validate query with default value using AdditionalValidation
+        const query = AdditionalValidation.validate(
+          LeaderboardQuerySchema,
+          request.query,
+        );
 
         const leaderboard = await WatchAndMemorizeService.getLeaderboard(
           gameId,
-          limit,
+          query.limit,
         );
 
         const result = new SuccessResponse(
