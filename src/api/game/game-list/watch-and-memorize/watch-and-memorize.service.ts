@@ -7,6 +7,7 @@ import {
   type IWatchAndMemorizePlayResponse,
 } from '@/common/interface/games';
 
+import { CoinsService } from './coins.service';
 import {
   type ICreateWatchAndMemorizeInput,
   type ISubmitResultInput,
@@ -17,50 +18,34 @@ export abstract class WatchAndMemorizeService {
   private static templateSlug = 'watch-and-memorize';
 
   // CREATE: Buat game baru
-  static async createGame(userId: string, data: ICreateWatchAndMemorizeInput) {
-    const template = await prisma.gameTemplates.findUnique({
-      where: { slug: this.templateSlug },
-      select: { id: true },
-    });
+  static async createGame(
+  userId: string,
+  data: ICreateWatchAndMemorizeInput,
+) {
+  const {
+    name,
+    description,
+    thumbnail_image,
+    is_publish_immediately,
+    difficulty_configs,
+    available_animals,
+    shop_config,
+  } = data;
 
-    if (!template) {
-      throw new ErrorResponse(StatusCodes.NOT_FOUND, 'Game template not found');
-    }
-
-    const existingGame = await prisma.games.findUnique({
-      where: { name: data.name },
-      select: { id: true },
-    });
-
-    if (existingGame) {
-      throw new ErrorResponse(
-        StatusCodes.BAD_REQUEST,
-        'Game name already exists',
-      );
-    }
-
-    const game = await prisma.games.create({
-      data: {
-        name: data.name,
-        description: data.description,
-        thumbnail_image: data.thumbnail_image,
-        game_template_id: template.id,
-        creator_id: userId,
-        game_json: data.game_json as unknown as Prisma.InputJsonValue,
-        is_published: false,
-      },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        thumbnail_image: true,
-        is_published: true,
-        created_at: true,
-      },
-    });
-
-    return game;
-  }
+  return prisma.games.create({
+    data: {
+      name,
+      description,
+      thumbnail_image,
+      is_publish_immediately,
+      difficulty_configs,
+      available_animals,
+      shop_config,
+      slug: 'watch-and-memorize',
+      created_by: userId,
+    },
+  });
+}
 
   // GET: Detail game untuk edit (owner only)
   static async getGameDetail(gameId: string, userId: string, userRole: ROLE) {
@@ -213,6 +198,8 @@ export abstract class WatchAndMemorizeService {
 
     const gameJson = game.game_json as unknown as IWatchAndMemorizeGameJson;
 
+    let rank = 0;
+
     if (userId) {
       const user = await prisma.users.findUnique({
         where: { id: userId },
@@ -237,9 +224,13 @@ export abstract class WatchAndMemorizeService {
         where: { id: userId },
         data: { total_game_played: { increment: 1 } },
       });
-    }
 
-    const rank = await this.getPlayerRank(gameId, data.score);
+      if (data.coinsEarned > 0) {
+        await CoinsService.addCoins(userId, data.coinsEarned);
+      }
+
+      rank = await this.getPlayerRank(gameId, data.score);
+    }
 
     return {
       success: true,
@@ -248,7 +239,7 @@ export abstract class WatchAndMemorizeService {
       totalQuestions: data.totalQuestions,
       timeSpent: data.timeSpent,
       coinsEarned: data.coinsEarned,
-      rank,
+      rank: rank || 0,
       message:
         data.correctAnswers === data.totalQuestions
           ? 'Perfect score!'
@@ -311,4 +302,3 @@ export abstract class WatchAndMemorizeService {
     return count + 1;
   }
 }
-
