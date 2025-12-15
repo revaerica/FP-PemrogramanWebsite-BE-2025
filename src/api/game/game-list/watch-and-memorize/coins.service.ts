@@ -1,31 +1,38 @@
 import { StatusCodes } from 'http-status-codes';
 
 import { ErrorResponse, prisma } from '@/common';
+import { UserProfileStorage } from '@/utils';
 
 export abstract class CoinsService {
-  private static readonly coinsKey = 'user_coins';
-
   // Get user coins balance
   static async getUserCoins(userId: string) {
-    const user = await prisma.users.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        username: true,
-      },
-    });
+    try {
+      const profile = await UserProfileStorage.getUserProfile(userId);
 
-    if (!user) {
-      throw new ErrorResponse(StatusCodes.NOT_FOUND, 'User not found');
+      // Get user info
+      const user = await prisma.users.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          username: true,
+        },
+      });
+
+      if (!user) {
+        throw new ErrorResponse(StatusCodes.NOT_FOUND, 'User not found');
+      }
+
+      return {
+        userId: user.id,
+        username: user.username,
+        coins: profile.coins,
+      };
+    } catch {
+      throw new ErrorResponse(
+        StatusCodes.INTERNAL_SERVER_ERROR,
+        'Failed to get user coins',
+      );
     }
-
-    const coins = await this.getCoinsFromMetadata(userId);
-
-    return {
-      userId: user.id,
-      username: user.username,
-      coins,
-    };
   }
 
   // Add coins to user (called after game completion)
@@ -37,25 +44,20 @@ export abstract class CoinsService {
       );
     }
 
-    const user = await prisma.users.findUnique({
-      where: { id: userId },
-      select: { id: true },
-    });
+    try {
+      const newBalance = await UserProfileStorage.addCoins(userId, amount);
 
-    if (!user) {
-      throw new ErrorResponse(StatusCodes.NOT_FOUND, 'User not found');
+      return {
+        userId,
+        coinsAdded: amount,
+        newBalance,
+      };
+    } catch {
+      throw new ErrorResponse(
+        StatusCodes.INTERNAL_SERVER_ERROR,
+        'Failed to add coins',
+      );
     }
-
-    const currentCoins = await this.getCoinsFromMetadata(userId);
-    const newBalance = currentCoins + amount;
-
-    await this.setCoinsToMetadata(userId, newBalance);
-
-    return {
-      userId: user.id,
-      coinsAdded: amount,
-      newBalance,
-    };
   }
 
   // Deduct coins from user (called when buying pendant)
@@ -67,108 +69,30 @@ export abstract class CoinsService {
       );
     }
 
-    const user = await prisma.users.findUnique({
-      where: { id: userId },
-      select: { id: true },
-    });
-
-    if (!user) {
-      throw new ErrorResponse(StatusCodes.NOT_FOUND, 'User not found');
-    }
-
-    const currentCoins = await this.getCoinsFromMetadata(userId);
-
-    if (currentCoins < amount) {
-      throw new ErrorResponse(StatusCodes.BAD_REQUEST, 'Insufficient coins');
-    }
-
-    const newBalance = currentCoins - amount;
-    await this.setCoinsToMetadata(userId, newBalance);
-
-    return {
-      userId: user.id,
-      coinsDeducted: amount,
-      newBalance,
-    };
-  }
-
-  // Private helper: Get coins from metadata (stored in a special game record)
-  private static async getCoinsFromMetadata(userId: string): Promise<number> {
     try {
-      const coinsGame = await prisma.games.findFirst({
-        where: {
-          creator_id: userId,
-          name: `__USER_COINS_${userId}__`,
-        },
-        select: {
-          game_json: true,
-        },
-      });
+      const profile = await UserProfileStorage.getUserProfile(userId);
 
-      if (coinsGame && coinsGame.game_json) {
-        const json = coinsGame.game_json as Record<string, number>;
-
-        return json.coins || 0;
+      if (profile.coins < amount) {
+        throw new ErrorResponse(StatusCodes.BAD_REQUEST, 'Insufficient coins');
       }
 
-      return 0; // Default coins if not found
-    } catch (error) {
-      console.error('Error getting coins metadata:', error);
+      const newBalance = await UserProfileStorage.deductCoins(userId, amount);
 
-      return 0;
-    }
-  }
-
-  // Private helper: Set coins to metadata
-  private static async setCoinsToMetadata(
-    userId: string,
-    coins: number,
-  ): Promise<void> {
-    try {
-      const coinsGame = await prisma.games.findFirst({
-        where: {
-          creator_id: userId,
-          name: `__USER_COINS_${userId}__`,
-        },
-        select: { id: true },
-      });
-
-      if (coinsGame) {
-        await prisma.games.update({
-          where: { id: coinsGame.id },
-          data: {
-            game_json: { coins },
-          },
-        });
-      } else {
-        // Create game metadata if not exists
-        const template = await prisma.gameTemplates.findUnique({
-          where: { slug: 'watch-and-memorize' },
-          select: { id: true },
-        });
-
-        if (!template) {
-          throw new ErrorResponse(
-            StatusCodes.INTERNAL_SERVER_ERROR,
-            'Game template not found',
-          );
-        }
-
-        await prisma.games.create({
-          data: {
-            name: `__USER_COINS_${userId}__`,
-            description: 'User coins metadata storage',
-            thumbnail_image: '',
-            game_template_id: template.id,
-            creator_id: userId,
-            game_json: { coins },
-            is_published: false,
-          },
-        });
+      return {
+        userId,
+        coinsDeducted: amount,
+        newBalance,
+      };
+    } catch (error: unknown) {
+      // ⭐ FIX: Ganti any jadi unknown
+      if (error instanceof ErrorResponse) {
+        throw error;
       }
-    } catch (error) {
-      console.error('Error setting coins metadata:', error);
-      // Fail gracefully
+
+      throw new ErrorResponse(
+        StatusCodes.INTERNAL_SERVER_ERROR,
+        'Failed to deduct coins',
+      );
     }
   }
 }

@@ -1,16 +1,21 @@
 import { type NextFunction, type Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
-import { type AuthedRequest, SuccessResponse, validateAuth } from '@/common';
+import {
+  type AuthedRequest,
+  SuccessResponse,
+  validateAuth,
+  validateBody,
+} from '@/common';
 
 import { PendantService } from './pendant.service';
+import { PurchasePendantSchema } from './schema';
 
 export const PendantController = Router()
   // GET /api/game/game-type/watch-and-memorize/pendant/shop - Get available pendants
-  .get('/shop', (request, response: Response, next: NextFunction) => {
+  .get('/shop', async (request, response: Response, next: NextFunction) => {
     try {
-      // ✅ REMOVED await - getAvailablePendants is now synchronous
-      const pendants = PendantService.getAvailablePendants();
+      const pendants = await PendantService.getAvailablePendants();
 
       const result = new SuccessResponse(
         StatusCodes.OK,
@@ -51,6 +56,7 @@ export const PendantController = Router()
   .post(
     '/purchase',
     validateAuth({}),
+    validateBody({ schema: PurchasePendantSchema }), // ⭐ TAMBAHAN VALIDATION
     async (
       request: AuthedRequest<{}, {}, { pendantId: string }>,
       response: Response,

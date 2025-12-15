@@ -100,11 +100,14 @@ export const WatchAndMemorizeController = Router()
     },
   )
 
-  // PATCH /api/game/game-type/watch-and-memorize/:gameId - Partial update game (need auth)
+  // Patch /api/game/game-type/watch-and-memorize/:gameId - Update game (need auth)
 .patch(
   '/:gameId',
   validateAuth({}),
-  validateBody({ schema: UpdateWatchAndMemorizeSchema }),
+  validateBody({ 
+    schema: UpdateWatchAndMemorizeSchema,
+    file_fields: [{ name: 'thumbnail_image', maxCount: 1 }], 
+  }),
   async (
     request: AuthedRequest<
       { gameId: string },

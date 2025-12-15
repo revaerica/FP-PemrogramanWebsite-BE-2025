@@ -6,7 +6,10 @@ import { type AuthedRequest, SuccessResponse, validateAuth } from '@/common';
 import { CoinsService } from './coins.service';
 
 export const CoinsController = Router()
-  // GET /api/game/game-type/watch-and-memorize/coins - Get user coins (auth required)
+  /**
+   * GET /api/game/game-type/watch-and-memorize/coins
+   * Get user's current coins balance (auth required)
+   */
   .get(
     '/',
     validateAuth({}),
