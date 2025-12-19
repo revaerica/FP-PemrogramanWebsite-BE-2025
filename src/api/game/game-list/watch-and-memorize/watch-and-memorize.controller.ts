@@ -101,42 +101,42 @@ export const WatchAndMemorizeController = Router()
   )
 
   // Patch /api/game/game-type/watch-and-memorize/:gameId - Update game (need auth)
-.patch(
-  '/:gameId',
-  validateAuth({}),
-  validateBody({ 
-    schema: UpdateWatchAndMemorizeSchema,
-    file_fields: [{ name: 'thumbnail_image', maxCount: 1 }], 
-  }),
-  async (
-    request: AuthedRequest<
-      { gameId: string },
-      {},
-      IUpdateWatchAndMemorizeInput
-    >,
-    response: Response,
-    next: NextFunction,
-  ) => {
-    try {
-      const game = await WatchAndMemorizeService.updateGame(
-        request.params.gameId,
-        request.user!.user_id,
-        request.user!.role,
-        request.body,
-      );
+  .patch(
+    '/:gameId',
+    validateAuth({}),
+    validateBody({
+      schema: UpdateWatchAndMemorizeSchema,
+      file_fields: [{ name: 'thumbnail_image', maxCount: 1 }],
+    }),
+    async (
+      request: AuthedRequest<
+        { gameId: string },
+        {},
+        IUpdateWatchAndMemorizeInput
+      >,
+      response: Response,
+      next: NextFunction,
+    ) => {
+      try {
+        const game = await WatchAndMemorizeService.updateGame(
+          request.params.gameId,
+          request.user!.user_id,
+          request.user!.role,
+          request.body,
+        );
 
-      const result = new SuccessResponse(
-        StatusCodes.OK,
-        'Game updated successfully',
-        game,
-      );
+        const result = new SuccessResponse(
+          StatusCodes.OK,
+          'Game updated successfully',
+          game,
+        );
 
-      return response.status(result.statusCode).json(result.json());
-    } catch (error) {
-      return next(error);
-    }
-  },
-)
+        return response.status(result.statusCode).json(result.json());
+      } catch (error) {
+        return next(error);
+      }
+    },
+  )
 
   // DELETE /api/game/game-type/watch-and-memorize/:gameId - Delete game (need auth)
   .delete(

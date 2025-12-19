@@ -1,15 +1,14 @@
 import { type Prisma, type ROLE } from '@prisma/client';
 import { StatusCodes } from 'http-status-codes';
-import { FileManager } from '@/utils';
 
 import { ErrorResponse, prisma } from '@/common';
 import {
   type IWatchAndMemorizeGameJson,
   type IWatchAndMemorizePlayResponse,
 } from '@/common/interface/games';
+import { FileManager } from '@/utils';
 
 import { CoinsService } from './coins.service';
-
 import {
   type ICreateWatchAndMemorizeInput,
   type ISubmitResultInput,
@@ -144,109 +143,112 @@ export abstract class WatchAndMemorizeService {
   }
 
   // UPDATE: Edit game
-  
+
   // UPDATE: Edit game
-static async updateGame(
-  gameId: string,
-  userId: string,
-  userRole: ROLE,
-  data: IUpdateWatchAndMemorizeInput,
-) {
-  // ✅ Get existing game data
-  const existing = await prisma.games.findUnique({
-    where: { id: gameId },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      thumbnail_image: true,
-      is_published: true,
-      creator_id: true,
-      game_json: true,
-      game_template: {
-        select: { slug: true },
+  static async updateGame(
+    gameId: string,
+    userId: string,
+    userRole: ROLE,
+    data: IUpdateWatchAndMemorizeInput,
+  ) {
+    // ✅ Get existing game data
+    const existing = await prisma.games.findUnique({
+      where: { id: gameId },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        thumbnail_image: true,
+        is_published: true,
+        creator_id: true,
+        game_json: true,
+        game_template: {
+          select: { slug: true },
+        },
       },
-    },
-  });
-
-  if (!existing) {
-    throw new ErrorResponse(StatusCodes.NOT_FOUND, 'Game not found');
-  }
-
-  if (existing.game_template.slug !== this.templateSlug) {
-    throw new ErrorResponse(
-      StatusCodes.BAD_REQUEST,
-      'Game is not a Watch and Memorize template',
-    );
-  }
-
-  // ✅ Check authorization
-  if (existing.creator_id !== userId && userRole !== 'SUPER_ADMIN') {
-    throw new ErrorResponse(
-      StatusCodes.FORBIDDEN,
-      'You are not allowed to update this game',
-    );
-  }
-
-  // ✅ Check duplicate name (if name is being changed)
-  if (data.name && data.name !== existing.name) {
-    const duplicate = await prisma.games.findFirst({
-      where: {
-        name: data.name,
-        id: { not: gameId },
-      },
-      select: { id: true },
     });
 
-    if (duplicate) {
+    if (!existing) {
+      throw new ErrorResponse(StatusCodes.NOT_FOUND, 'Game not found');
+    }
+
+    if (existing.game_template.slug !== this.templateSlug) {
       throw new ErrorResponse(
         StatusCodes.BAD_REQUEST,
-        'Game name already exists',
+        'Game is not a Watch and Memorize template',
       );
     }
-  }
 
-  // ✅ Handle thumbnail image update
-  let thumbnailImagePath = existing.thumbnail_image;
-  if (data.thumbnail_image) {
-    thumbnailImagePath = await FileManager.upload(
-      `game/watch-and-memorize/${gameId}`,
-      data.thumbnail_image,
-    );
-    // Remove old thumbnail if it exists
-    if (existing.thumbnail_image) {
-      await FileManager.remove(existing.thumbnail_image);
+    // ✅ Check authorization
+    if (existing.creator_id !== userId && userRole !== 'SUPER_ADMIN') {
+      throw new ErrorResponse(
+        StatusCodes.FORBIDDEN,
+        'You are not allowed to update this game',
+      );
     }
+
+    // ✅ Check duplicate name (if name is being changed)
+    if (data.name && data.name !== existing.name) {
+      const duplicate = await prisma.games.findFirst({
+        where: {
+          name: data.name,
+          id: { not: gameId },
+        },
+        select: { id: true },
+      });
+
+      if (duplicate) {
+        throw new ErrorResponse(
+          StatusCodes.BAD_REQUEST,
+          'Game name already exists',
+        );
+      }
+    }
+
+    // ✅ Handle thumbnail image update
+    let thumbnailImagePath = existing.thumbnail_image;
+
+    if (data.thumbnail_image) {
+      thumbnailImagePath = await FileManager.upload(
+        `game/watch-and-memorize/${gameId}`,
+        data.thumbnail_image,
+      );
+
+      // Remove old thumbnail if it exists
+      if (existing.thumbnail_image) {
+        await FileManager.remove(existing.thumbnail_image);
+      }
+    }
+
+    // ✅ Prepare update data
+    const updateData: Prisma.GamesUpdateInput = {
+      name: data.name ?? existing.name,
+      description: data.description ?? existing.description,
+      thumbnail_image: thumbnailImagePath,
+      is_published:
+        data.is_publish == null ? existing.is_published : data.is_publish,
+    };
+
+    // ✅ Only update game_json if provided
+    if (data.game_json !== undefined) {
+      updateData.game_json = data.game_json as unknown as Prisma.InputJsonValue;
+    }
+
+    // ✅ Update game
+    const updated = await prisma.games.update({
+      where: { id: gameId },
+      data: updateData,
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        thumbnail_image: true,
+        is_published: true,
+      },
+    });
+
+    return updated;
   }
-
-  // ✅ Prepare update data
-  const updateData: Prisma.GamesUpdateInput = {
-    name: data.name ?? existing.name,
-    description: data.description ?? existing.description,
-    thumbnail_image: thumbnailImagePath,
-    is_published: data.is_publish == null ? existing.is_published : data.is_publish,
-  };
-
-  // ✅ Only update game_json if provided
-  if (data.game_json !== undefined) {
-    updateData.game_json = data.game_json as unknown as Prisma.InputJsonValue;
-  }
-
-  // ✅ Update game
-  const updated = await prisma.games.update({
-    where: { id: gameId },
-    data: updateData,
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      thumbnail_image: true,
-      is_published: true,
-    },
-  });
-
-  return updated;
-}
 
   // DELETE: Hapus game
   static async deleteGame(gameId: string, userId: string, userRole: ROLE) {

@@ -1,7 +1,14 @@
 import { z } from 'zod';
 
 const VALID_ANIMALS = [
-  'penguin', 'cow', 'fox', 'bear', 'dog', 'duck', 'lamb', 'hedgehog'
+  'penguin',
+  'cow',
+  'fox',
+  'bear',
+  'dog',
+  'duck',
+  'lamb',
+  'hedgehog',
 ] as const;
 
 // Difficulty Config Schema
@@ -46,4 +53,6 @@ export const CreateWatchAndMemorizeSchema = z.object({
   game_json: GameJsonSchema,
 });
 
-export type ICreateWatchAndMemorizeInput = z.infer<typeof CreateWatchAndMemorizeSchema>;
+export type ICreateWatchAndMemorizeInput = z.infer<
+  typeof CreateWatchAndMemorizeSchema
+>;

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import {
   fileSchema,
   StringToBooleanSchema,
@@ -54,7 +55,7 @@ export const UpdateWatchAndMemorizeSchema = z.object({
   name: z.string().min(3).max(100).trim().optional(),
   description: z.string().max(500).trim().optional(),
   thumbnail_image: fileSchema({}).optional(),
-  is_publish: StringToBooleanSchema.optional(), 
+  is_publish: StringToBooleanSchema.optional(),
   game_json: StringToObjectSchema(GameJsonSchema).optional(),
 });
 
