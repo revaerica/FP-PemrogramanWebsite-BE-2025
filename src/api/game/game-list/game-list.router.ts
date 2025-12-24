@@ -15,8 +15,6 @@ import { TrueOrFalseController } from './true-or-false/true-or-false.controller'
 import { TypeSpeedController } from './type-speed/type-speed.controller';
 import { TypeTheAnswerController } from './type-the-answer/type-the-answer.controller';
 import { WhackAMoleController } from './whack-a-mole/whack-a-mole.controller';
-import { CoinsController } from './watch-and-memorize/coins.controller';
-import { PendantController } from './watch-and-memorize/pendant.controller';
 import { WatchAndMemorizeController } from './watch-and-memorize/watch-and-memorize.controller';
 
 const gameListRouter = Router();
@@ -37,7 +35,5 @@ gameListRouter.use('/type-speed', TypeSpeedController);
 gameListRouter.use('/type-the-answer', TypeTheAnswerController);
 gameListRouter.use('/whack-a-mole', WhackAMoleController);
 gameListRouter.use('/watch-and-memorize', WatchAndMemorizeController);
-gameListRouter.use('/watch-and-memorize', CoinsController);
-gameListRouter.use('/watch-and-memorize', PendantController);
 
 export { gameListRouter };
