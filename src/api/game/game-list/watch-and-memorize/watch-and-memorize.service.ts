@@ -8,7 +8,7 @@ import {
 } from '@/common/interface/games';
 import { FileManager } from '@/utils';
 
-import { CoinsService } from './coins.service';
+import { CoinsService } from './coins/coins.service';
 import {
   type ICreateWatchAndMemorizeInput,
   type ISubmitResultInput,

@@ -3,7 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 import { ErrorResponse } from '@/common';
 import { UserProfileStorage } from '@/utils';
 
-import { CoinsService } from './coins.service';
+import { CoinsService } from '../coins/coins.service';
 
 export abstract class PendantService {
   // Pendant definitions (hardcoded - sesuai FE)

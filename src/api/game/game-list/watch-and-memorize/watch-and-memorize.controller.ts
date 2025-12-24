@@ -20,7 +20,7 @@ import {
 } from './schema';
 import { WatchAndMemorizeService } from './watch-and-memorize.service';
 
-export const WatchAndMemorizeController = Router()
+export const WatchAndMemorizeController: Router = Router()
   // POST /api/game/game-type/watch-and-memorize - Create game (need auth)
   .post(
     '/',

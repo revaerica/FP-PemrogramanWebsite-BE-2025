@@ -8,8 +8,8 @@ import {
   validateBody,
 } from '@/common';
 
+import { PurchasePendantSchema } from '../schema';
 import { PendantService } from './pendant.service';
-import { PurchasePendantSchema } from './schema';
 
 export const PendantController = Router()
   // GET /api/game/game-type/watch-and-memorize/pendant/shop - Get available pendants
