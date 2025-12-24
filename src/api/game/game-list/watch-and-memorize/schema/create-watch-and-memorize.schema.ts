@@ -49,10 +49,11 @@ export const CreateWatchAndMemorizeSchema = z.object({
   name: z.string().min(3),
   description: z.string().optional(),
   thumbnail_image: z.string(), // base64 image
-  is_publish_immediately: z.boolean().default(false),
+  is_published: z.boolean().default(false),
   game_json: GameJsonSchema,
 });
 
 export type ICreateWatchAndMemorizeInput = z.infer<
   typeof CreateWatchAndMemorizeSchema
 >;
+
