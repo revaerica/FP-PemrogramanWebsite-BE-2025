@@ -21,13 +21,13 @@ import { WhackAMoleController } from './whack-a-mole/whack-a-mole.controller';
 
 const gameListRouter = Router();
 
-GameListRouter.use('/quiz', QuizController);
-GameListRouter.use('/speed-sorting', SpeedSortingController);
-GameListRouter.use('/anagram', AnagramController);
-GameListRouter.use('/pair-or-no-pair', PairOrNoPairController);
-GameListRouter.use('/watch-and-memorize', WatchAndMemorizeController);
-GameListRouter.use('/watch-and-memorize/coins', CoinsController);
-GameListRouter.use('/watch-and-memorize/pendant', PendantController);
+gameListRouter.use('/quiz', QuizController);
+gameListRouter.use('/speed-sorting', SpeedSortingController);
+gameListRouter.use('/anagram', AnagramController);
+gameListRouter.use('/pair-or-no-pair', PairOrNoPairController);
+gameListRouter.use('/watch-and-memorize', WatchAndMemorizeController);
+gameListRouter.use('/watch-and-memorize/coins', CoinsController);
+gameListRouter.use('/watch-and-memorize/pendant', PendantController);
 gameListRouter.use('/quiz', QuizController);
 gameListRouter.use('/maze-chase', MazeChaseController);
 gameListRouter.use('/sliding-puzzle', SlidingPuzzleController);
