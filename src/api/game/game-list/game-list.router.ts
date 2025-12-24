@@ -14,6 +14,9 @@ import { SpinTheWheelController } from './spin-the-wheel/spin-the-wheel.controll
 import { TrueOrFalseController } from './true-or-false/true-or-false.controller';
 import { TypeSpeedController } from './type-speed/type-speed.controller';
 import { TypeTheAnswerController } from './type-the-answer/type-the-answer.controller';
+import { CoinsController } from './watch-and-memorize/coins.controller';
+import { PendantController } from './watch-and-memorize/pendant.controller';
+import { WatchAndMemorizeController } from './watch-and-memorize/watch-and-memorize.controller';
 import { WhackAMoleController } from './whack-a-mole/whack-a-mole.controller';
 import { CoinsController } from './watch-and-memorize/coins.controller';
 import { PendantController } from './watch-and-memorize/pendant.controller';
@@ -21,6 +24,10 @@ import { WatchAndMemorizeController } from './watch-and-memorize/watch-and-memor
 
 const gameListRouter = Router();
 
+<<<<<<< HEAD
+=======
+gameListRouter.use('/quiz', QuizController);
+>>>>>>> c91886a (chore: fix import sort)
 gameListRouter.use('/airplane', airplaneRouter);
 gameListRouter.use('/anagram', AnagramController);
 gameListRouter.use('/crossword', CrosswordController);
@@ -28,7 +35,10 @@ gameListRouter.use('/find-the-match', FindTheMatchController);
 gameListRouter.use('/hangman', HangmanController);
 gameListRouter.use('/maze-chase', MazeChaseController);
 gameListRouter.use('/pair-or-no-pair', PairOrNoPairController);
+<<<<<<< HEAD
 gameListRouter.use('/quiz', QuizController);
+=======
+>>>>>>> c91886a (chore: fix import sort)
 gameListRouter.use('/sliding-puzzle', SlidingPuzzleController);
 gameListRouter.use('/speed-sorting', SpeedSortingController);
 gameListRouter.use('/spin-the-wheel', SpinTheWheelController);
