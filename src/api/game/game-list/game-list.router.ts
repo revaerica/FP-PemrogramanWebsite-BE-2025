@@ -14,26 +14,21 @@ import { SpinTheWheelController } from './spin-the-wheel/spin-the-wheel.controll
 import { TrueOrFalseController } from './true-or-false/true-or-false.controller';
 import { TypeSpeedController } from './type-speed/type-speed.controller';
 import { TypeTheAnswerController } from './type-the-answer/type-the-answer.controller';
-<<<<<<< HEAD
 import { CoinsController } from './watch-and-memorize/coins/coins.controller';
 import { PendantController } from './watch-and-memorize/pendant/pendant.controller';
-=======
-import { WhackAMoleController } from './whack-a-mole/whack-a-mole.controller';
->>>>>>> 524474f9de3e149bd7c85654f5b5efafc92d54b1
 import { WatchAndMemorizeController } from './watch-and-memorize/watch-and-memorize.controller';
 import { WhackAMoleController } from './whack-a-mole/whack-a-mole.controller';
 
 const gameListRouter = Router();
 
-gameListRouter.use('/quiz', QuizController);
 gameListRouter.use('/airplane', airplaneRouter);
-
 gameListRouter.use('/anagram', AnagramController);
 gameListRouter.use('/crossword', CrosswordController);
 gameListRouter.use('/find-the-match', FindTheMatchController);
 gameListRouter.use('/hangman', HangmanController);
 gameListRouter.use('/maze-chase', MazeChaseController);
 gameListRouter.use('/pair-or-no-pair', PairOrNoPairController);
+gameListRouter.use('/quiz', QuizController);
 gameListRouter.use('/sliding-puzzle', SlidingPuzzleController);
 gameListRouter.use('/speed-sorting', SpeedSortingController);
 gameListRouter.use('/spin-the-wheel', SpinTheWheelController);
@@ -41,12 +36,8 @@ gameListRouter.use('/true-or-false', TrueOrFalseController);
 gameListRouter.use('/type-speed', TypeSpeedController);
 gameListRouter.use('/type-the-answer', TypeTheAnswerController);
 gameListRouter.use('/whack-a-mole', WhackAMoleController);
-
 gameListRouter.use('/watch-and-memorize', WatchAndMemorizeController);
-<<<<<<< HEAD
 gameListRouter.use('/watch-and-memorize/coins', CoinsController);
 gameListRouter.use('/watch-and-memorize/pendant', PendantController);
-=======
->>>>>>> 524474f9de3e149bd7c85654f5b5efafc92d54b1
 
 export { gameListRouter };
