@@ -28,10 +28,10 @@ export abstract class PairOrNoPairService {
     );
 
     const gameJson: IPairOrNoPairGameData = {
-      items: data.items.map((item, index) => ({
-        id: `item-${String(index + 1).padStart(3, '0')}`,
-        left_content: item.left_content,
-        right_content: item.right_content,
+      items: data.items.map(item => ({
+        id: v4(),
+        left_content: String(item.left_content),
+        right_content: String(item.right_content),
       })),
     };
 
@@ -44,10 +44,14 @@ export abstract class PairOrNoPairService {
         description: data.description,
         thumbnail_image: thumbnailImagePath,
         is_published: data.is_publish_immediately,
+        // FIX: Jangan di-stringify, biarkan Prisma menangani objek
         game_json: gameJson as unknown as Prisma.InputJsonValue,
       },
       select: {
         id: true,
+        score: true,
+        difficulty: true,
+        created_at: true,
       },
     });
 
@@ -86,8 +90,16 @@ export abstract class PairOrNoPairService {
         'User cannot access this game',
       );
 
+    // FIX: Hapus try-catch, lakukan parsing manual yang aman
+    const rawJson = game.game_json;
+    const parsedData = (
+      typeof rawJson === 'string' ? JSON.parse(rawJson) : rawJson
+    ) as IPairOrNoPairGameData;
+
     return {
       ...game,
+      game_json: parsedData,
+      items: parsedData?.items || [],
       creator_id: undefined,
       game_template: undefined,
     };
@@ -132,17 +144,18 @@ export abstract class PairOrNoPairService {
         'User cannot get this game data',
       );
 
-    const gameJson = game.game_json as unknown as IPairOrNoPairGameData | null;
-
-    if (!gameJson)
-      throw new ErrorResponse(StatusCodes.NOT_FOUND, 'Game data not found');
+    // FIX: Hapus try-catch
+    const rawJson = game.game_json;
+    const parsedData = (
+      typeof rawJson === 'string' ? JSON.parse(rawJson) : rawJson
+    ) as IPairOrNoPairGameData;
 
     return {
       id: game.id,
       name: game.name,
       description: game.description,
       thumbnail_image: game.thumbnail_image,
-      items: gameJson.items ?? [],
+      items: parsedData?.items ?? [],
       is_published: game.is_published,
     };
   }
@@ -191,8 +204,6 @@ export abstract class PairOrNoPairService {
         );
     }
 
-    const oldGameJson = game.game_json as IPairOrNoPairGameData | null;
-
     let thumbnailImagePath = game.thumbnail_image;
 
     if (data.thumbnail_image) {
@@ -206,14 +217,16 @@ export abstract class PairOrNoPairService {
       );
     }
 
+    const itemsData = data.items
+      ? data.items.map(item => ({
+          id: (item.id || v4()) as string,
+          left_content: String(item.left_content),
+          right_content: String(item.right_content),
+        }))
+      : [];
+
     const gameJson: IPairOrNoPairGameData = {
-      items: data.items
-        ? data.items.map((item, index) => ({
-            id: `item-${String(index + 1).padStart(3, '0')}`,
-            left_content: item.left_content,
-            right_content: item.right_content,
-          }))
-        : (oldGameJson?.items ?? []),
+      items: itemsData,
     };
 
     const updatedGame = await prisma.games.update({
@@ -223,6 +236,7 @@ export abstract class PairOrNoPairService {
         description: data.description,
         thumbnail_image: thumbnailImagePath,
         is_published: data.is_publish,
+        // FIX: Hapus JSON.stringify
         game_json: gameJson as unknown as Prisma.InputJsonValue,
       },
       select: {
@@ -261,15 +275,15 @@ export abstract class PairOrNoPairService {
   }
 
   private static async existGameCheck(game_name?: string, game_id?: string) {
-    const where: Record<string, unknown> = {};
+    const where: Prisma.GamesWhereInput = {};
     if (game_name) where.name = game_name;
-    if (game_id) where.id = game_id;
+    if (game_id) where.id = { not: game_id };
 
     if (Object.keys(where).length === 0) return null;
 
     const game = await prisma.games.findFirst({
       where,
-      select: { id: true, creator_id: true },
+      select: { id: true },
     });
 
     if (game)
@@ -298,7 +312,6 @@ export abstract class PairOrNoPairService {
     game_id: string,
     user_id?: string,
   ) {
-    // Verify game exists and is a pair-or-no-pair game
     const game = await prisma.games.findUnique({
       where: { id: game_id },
       select: {
@@ -312,7 +325,6 @@ export abstract class PairOrNoPairService {
     if (!game || game.game_template.slug !== this.GAME_SLUG)
       throw new ErrorResponse(StatusCodes.NOT_FOUND, 'Game not found');
 
-    // Create leaderboard entry
     const leaderboardEntry = await prisma.leaderboard.create({
       data: {
         game_id,
@@ -321,15 +333,16 @@ export abstract class PairOrNoPairService {
         difficulty: data.difficulty,
         time_taken: data.time_taken,
       },
+      // FIX: Kembalikan select agar query tidak berat
       select: {
         id: true,
         score: true,
         difficulty: true,
+        time_taken: true,
         created_at: true,
       },
     });
 
-    // Get user's rank for this game and difficulty
     const rank = await prisma.leaderboard.count({
       where: {
         game_id,
@@ -347,7 +360,6 @@ export abstract class PairOrNoPairService {
   }
 
   static async getLeaderboard(game_id: string, difficulty?: string) {
-    // Verify game exists
     const game = await prisma.games.findUnique({
       where: { id: game_id },
       select: { id: true },
@@ -355,11 +367,9 @@ export abstract class PairOrNoPairService {
 
     if (!game) throw new ErrorResponse(StatusCodes.NOT_FOUND, 'Game not found');
 
-    // Build where clause
     const where: { game_id: string; difficulty?: string } = { game_id };
     if (difficulty) where.difficulty = difficulty;
 
-    // Get top 10 scores
     const leaderboard = await prisma.leaderboard.findMany({
       where,
       orderBy: { score: 'desc' },

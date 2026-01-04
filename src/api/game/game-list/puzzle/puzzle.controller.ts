@@ -13,37 +13,40 @@ import {
   validateBody,
 } from '@/common';
 
-import { PairOrNoPairService } from './pair-or-no-pair.service';
+import { PuzzleService } from './puzzle.service';
 import {
-  CreatePairOrNoPairSchema,
-  EvaluateSchema,
-  type ICreatePairOrNoPair,
-  type IEvaluate,
-  type IUpdatePairOrNoPair,
-  UpdatePairOrNoPairSchema,
+  CheckPuzzleSchema,
+  CreatePuzzleSchema,
+  type ICheckPuzzle,
+  type ICreatePuzzle,
+  type IUpdatePuzzle,
+  UpdatePuzzleSchema,
 } from './schema';
 
-export const PairOrNoPairController = Router()
+export const PuzzleController = Router()
   .post(
     '/',
     validateAuth({}),
     validateBody({
-      schema: CreatePairOrNoPairSchema,
-      file_fields: [{ name: 'thumbnail_image', maxCount: 1 }],
+      schema: CreatePuzzleSchema,
+      file_fields: [
+        { name: 'thumbnail_image', maxCount: 1 },
+        { name: 'puzzle_image', maxCount: 1 },
+      ],
     }),
     async (
-      request: AuthedRequest<{}, {}, ICreatePairOrNoPair>,
+      request: AuthedRequest<{}, {}, ICreatePuzzle>,
       response: Response,
       next: NextFunction,
     ) => {
       try {
-        const newGame = await PairOrNoPairService.createGame(
+        const newGame = await PuzzleService.createPuzzle(
           request.body,
           request.user!.user_id,
         );
         const result = new SuccessResponse(
           StatusCodes.CREATED,
-          'Game created',
+          'Puzzle created',
           newGame,
         );
 
@@ -62,7 +65,7 @@ export const PairOrNoPairController = Router()
       next: NextFunction,
     ) => {
       try {
-        const game = await PairOrNoPairService.getGameDetail(
+        const game = await PuzzleService.getPuzzleGameDetail(
           request.params.game_id,
           request.user!.user_id,
           request.user!.role,
@@ -87,7 +90,7 @@ export const PairOrNoPairController = Router()
       next: NextFunction,
     ) => {
       try {
-        const game = await PairOrNoPairService.getGamePlay(
+        const game = await PuzzleService.getPuzzlePlay(
           request.params.game_id,
           true,
         );
@@ -112,9 +115,9 @@ export const PairOrNoPairController = Router()
       next: NextFunction,
     ) => {
       try {
-        const game = await PairOrNoPairService.getGamePlay(
+        const game = await PuzzleService.getPuzzlePlay(
           request.params.game_id,
-          false,
+          true,
           request.user!.user_id,
           request.user!.role,
         );
@@ -134,16 +137,19 @@ export const PairOrNoPairController = Router()
     '/:game_id',
     validateAuth({}),
     validateBody({
-      schema: UpdatePairOrNoPairSchema,
-      file_fields: [{ name: 'thumbnail_image', maxCount: 1 }],
+      schema: UpdatePuzzleSchema,
+      file_fields: [
+        { name: 'thumbnail_image', maxCount: 1 },
+        { name: 'puzzle_image', maxCount: 1 },
+      ],
     }),
     async (
-      request: AuthedRequest<{ game_id: string }, {}, IUpdatePairOrNoPair>,
+      request: AuthedRequest<{ game_id: string }, {}, IUpdatePuzzle>,
       response: Response,
       next: NextFunction,
     ) => {
       try {
-        const updatedGame = await PairOrNoPairService.updateGame(
+        const updatedGame = await PuzzleService.updatePuzzle(
           request.body,
           request.params.game_id,
           request.user!.user_id,
@@ -151,11 +157,38 @@ export const PairOrNoPairController = Router()
         );
         const result = new SuccessResponse(
           StatusCodes.OK,
-          'Game updated',
+          'Puzzle updated',
           updatedGame,
         );
 
         return response.status(result.statusCode).json(result.json());
+      } catch (error) {
+        return next(error);
+      }
+    },
+  )
+  .post(
+    '/:game_id/check',
+    validateBody({ schema: CheckPuzzleSchema }),
+    async (
+      request: Request<{ game_id: string }, {}, ICheckPuzzle>,
+      response: Response,
+      next: NextFunction,
+    ) => {
+      try {
+        const result = await PuzzleService.checkPuzzle(
+          request.body,
+          request.params.game_id,
+        );
+        const successResponse = new SuccessResponse(
+          StatusCodes.OK,
+          'Puzzle checked successfully',
+          result,
+        );
+
+        return response
+          .status(successResponse.statusCode)
+          .json(successResponse.json());
       } catch (error) {
         return next(error);
       }
@@ -170,7 +203,7 @@ export const PairOrNoPairController = Router()
       next: NextFunction,
     ) => {
       try {
-        const result = await PairOrNoPairService.deleteGame(
+        const result = await PuzzleService.deletePuzzle(
           request.params.game_id,
           request.user!.user_id,
           request.user!.role,
@@ -178,66 +211,7 @@ export const PairOrNoPairController = Router()
 
         const successResponse = new SuccessResponse(
           StatusCodes.OK,
-          'Game deleted successfully',
-          result,
-        );
-
-        return response
-          .status(successResponse.statusCode)
-          .json(successResponse.json());
-      } catch (error) {
-        return next(error);
-      }
-    },
-  )
-  .post(
-    '/:game_id/evaluate',
-    validateAuth({ optional: true }),
-    validateBody({ schema: EvaluateSchema }),
-    async (
-      request: AuthedRequest<{ game_id: string }, {}, IEvaluate>,
-      response: Response,
-      next: NextFunction,
-    ) => {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const result = await PairOrNoPairService.evaluateGame(
-          request.body,
-          request.params.game_id,
-          request.user?.user_id,
-        );
-
-        const successResponse = new SuccessResponse(
-          StatusCodes.OK,
-          'Score submitted successfully',
-          result,
-        );
-
-        return response
-          .status(successResponse.statusCode)
-          .json(successResponse.json());
-      } catch (error) {
-        return next(error);
-      }
-    },
-  )
-  .get(
-    '/:game_id/leaderboard',
-    async (
-      request: Request<{ game_id: string }, {}, {}, { difficulty?: string }>,
-      response: Response,
-      next: NextFunction,
-    ) => {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const result = await PairOrNoPairService.getLeaderboard(
-          request.params.game_id,
-          request.query.difficulty,
-        );
-
-        const successResponse = new SuccessResponse(
-          StatusCodes.OK,
-          'Leaderboard retrieved successfully',
+          'Puzzle deleted successfully',
           result,
         );
 

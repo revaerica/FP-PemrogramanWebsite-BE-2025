@@ -106,6 +106,7 @@ export abstract class GameService {
 
     const cleanedResult = paginationResult.data.map(game => ({
       ...game,
+      thumbnail_image: game.thumbnail_image,
       game_template: undefined,
       game_template_name: game.game_template.name,
       game_template_slug: game.game_template.slug,
