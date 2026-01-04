@@ -2,6 +2,7 @@ export * from './airplane';
 export * from './anagram.interface';
 export * from './crossword.interface';
 export * from './find-the-match.interface';
+export * from './group-sort.interface';
 export * from './hangman.interface';
 export * from './math-generator.interface';
 export * from './maze-chase.interface';
